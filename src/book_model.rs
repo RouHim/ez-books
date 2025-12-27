@@ -44,10 +44,6 @@ impl Book {
             updated_at: now,
         }
     }
-
-    pub fn update_timestamp(&mut self) {
-        self.updated_at = current_timestamp();
-    }
 }
 
 fn current_timestamp() -> i64 {
@@ -77,20 +73,6 @@ mod tests {
         assert!(book.created_at > 0);
         assert_eq!(book.created_at, book.updated_at);
         assert!(book.author.is_none());
-    }
-
-    #[test]
-    fn should_update_timestamp_on_modification() {
-        // Given: A book
-        let mut book = Book::new("Test".to_string(), "/path.epub".to_string());
-        let original_timestamp = book.updated_at;
-
-        // When: Waiting a bit and updating timestamp
-        std::thread::sleep(std::time::Duration::from_millis(10));
-        book.update_timestamp();
-
-        // Then: Updated timestamp should be greater
-        assert!(book.updated_at >= original_timestamp);
     }
 
     #[test]

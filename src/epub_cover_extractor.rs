@@ -8,7 +8,6 @@ use tracing::{info, instrument, warn};
 
 const COVER_WIDTH: u32 = 300;
 const COVER_HEIGHT: u32 = 450;
-const JPEG_QUALITY: u8 = 85;
 
 #[instrument(skip_all, fields(path = %path.as_ref().display()))]
 pub fn extract_cover(path: impl AsRef<Path>) -> Result<Option<Vec<u8>>> {

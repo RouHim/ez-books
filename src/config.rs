@@ -8,7 +8,6 @@ pub struct Config {
     pub database_url: String,
     pub storage_path: String,
     pub openlibrary_api_url: String,
-    pub max_upload_size: u64,
 }
 
 impl Config {
@@ -24,10 +23,6 @@ impl Config {
             storage_path: env::var("STORAGE_PATH").unwrap_or_else(|_| "./data".to_string()),
             openlibrary_api_url: env::var("OPENLIBRARY_API_URL")
                 .unwrap_or_else(|_| "https://openlibrary.org".to_string()),
-            max_upload_size: env::var("MAX_UPLOAD_SIZE")
-                .ok()
-                .and_then(|s| s.parse().ok())
-                .unwrap_or(52_428_800), // 50MB default
         })
     }
 
@@ -57,7 +52,6 @@ mod tests {
         assert_eq!(config.database_url, "sqlite://data/ez-books.db");
         assert_eq!(config.storage_path, "./data");
         assert_eq!(config.openlibrary_api_url, "https://openlibrary.org");
-        assert_eq!(config.max_upload_size, 52_428_800);
     }
 
     #[test]

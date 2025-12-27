@@ -120,14 +120,6 @@ impl FileStorage {
         Ok(())
     }
 
-    pub fn epub_exists(&self, book_id: &str) -> bool {
-        self.epub_path(book_id).exists()
-    }
-
-    pub fn cover_exists(&self, book_id: &str) -> bool {
-        self.cover_path(book_id).exists()
-    }
-
     fn epub_path(&self, book_id: &str) -> PathBuf {
         self.base_path
             .join("books")
@@ -232,14 +224,14 @@ mod tests {
         let (storage, _temp_dir) = create_test_storage();
         let book_id = "test-book-id";
         storage.save_epub(book_id, b"test data").unwrap();
-        assert!(storage.epub_exists(book_id));
+        assert!(storage.epub_path(book_id).exists());
 
         // When: Deleting the EPUB
         let result = storage.delete_epub(book_id);
 
         // Then: Should succeed and file should be removed
         assert!(result.is_ok());
-        assert!(!storage.epub_exists(book_id));
+        assert!(!storage.epub_path(book_id).exists());
     }
 
     #[test]
@@ -248,14 +240,14 @@ mod tests {
         let (storage, _temp_dir) = create_test_storage();
         let book_id = "test-book-id";
         storage.save_cover(book_id, b"test data").unwrap();
-        assert!(storage.cover_exists(book_id));
+        assert!(storage.cover_path(book_id).exists());
 
         // When: Deleting the cover
         let result = storage.delete_cover(book_id);
 
         // Then: Should succeed and file should be removed
         assert!(result.is_ok());
-        assert!(!storage.cover_exists(book_id));
+        assert!(!storage.cover_path(book_id).exists());
     }
 
     #[test]
@@ -268,34 +260,6 @@ mod tests {
 
         // Then: Should succeed (idempotent)
         assert!(result.is_ok());
-    }
-
-    #[test]
-    fn should_check_epub_existence() {
-        // Given: A file storage
-        let (storage, _temp_dir) = create_test_storage();
-        let book_id = "test-book-id";
-
-        // When: Checking before saving
-        assert!(!storage.epub_exists(book_id));
-
-        // When: Saving and checking again
-        storage.save_epub(book_id, b"test").unwrap();
-        assert!(storage.epub_exists(book_id));
-    }
-
-    #[test]
-    fn should_check_cover_existence() {
-        // Given: A file storage
-        let (storage, _temp_dir) = create_test_storage();
-        let book_id = "test-book-id";
-
-        // When: Checking before saving
-        assert!(!storage.cover_exists(book_id));
-
-        // When: Saving and checking again
-        storage.save_cover(book_id, b"test").unwrap();
-        assert!(storage.cover_exists(book_id));
     }
 
     #[test]

@@ -102,11 +102,12 @@ fn extract_isbns(doc: &EpubDoc<std::io::BufReader<std::fs::File>>, metadata: &mu
         let cleaned = identifier.replace(['-', ' '], "");
 
         // Check for ISBN-13 (13 digits, starts with 978 or 979)
-        if cleaned.len() == 13 && (cleaned.starts_with("978") || cleaned.starts_with("979")) {
-            if cleaned.chars().all(char::is_numeric) {
-                metadata.isbn_13 = Some(cleaned);
-                continue;
-            }
+        if cleaned.len() == 13
+            && (cleaned.starts_with("978") || cleaned.starts_with("979"))
+            && cleaned.chars().all(char::is_numeric)
+        {
+            metadata.isbn_13 = Some(cleaned);
+            continue;
         }
 
         // Check for ISBN-10 (10 characters, mostly digits)

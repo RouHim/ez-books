@@ -1,5 +1,4 @@
 /// Reusable HTML template functions
-
 pub fn html_header(title: &str, css_file: &str) -> String {
     format!(
         r#"<!DOCTYPE html>

@@ -89,50 +89,6 @@ impl OpenLibraryClient {
             Ok(Some(books_response))
         }
     }
-
-    #[instrument(skip(self))]
-    pub async fn download_cover(&self, isbn: &str) -> Result<Option<Vec<u8>>> {
-        info!(isbn = %isbn, "Downloading cover from OpenLibrary");
-
-        let url = format!("{}/b/isbn/{}-L.jpg", self.cover_base_url(), isbn);
-
-        let response = self.http_client.get(&url).send().await.map_err(|e| {
-            warn!(isbn = %isbn, error = %e, "Failed to download cover");
-            EzBooksError::OpenLibraryApi(format!("Cover download failed: {}", e))
-        })?;
-
-        if !response.status().is_success() {
-            warn!(
-                isbn = %isbn,
-                status = %response.status(),
-                "Cover not available on OpenLibrary"
-            );
-            return Ok(None);
-        }
-
-        let bytes = response.bytes().await.map_err(|e| {
-            warn!(isbn = %isbn, error = %e, "Failed to read cover data");
-            EzBooksError::OpenLibraryApi(format!("Failed to read cover: {}", e))
-        })?;
-
-        // Validate it's actually an image (basic check)
-        if bytes.len() < 100 {
-            warn!(isbn = %isbn, size = bytes.len(), "Cover data too small, likely not a valid image");
-            return Ok(None);
-        }
-
-        info!(isbn = %isbn, size = bytes.len(), "Cover downloaded successfully");
-        Ok(Some(bytes.to_vec()))
-    }
-
-    fn cover_base_url(&self) -> String {
-        if self.base_url == DEFAULT_BASE_URL {
-            "https://covers.openlibrary.org".to_string()
-        } else {
-            // For testing, use the same base URL
-            self.base_url.clone()
-        }
-    }
 }
 
 impl Default for OpenLibraryClient {
@@ -187,20 +143,6 @@ mod tests {
         assert!(url.contains("bibkeys=ISBN:9780140328721"));
         assert!(url.contains("format=json"));
         assert!(url.contains("jscmd=data"));
-    }
-
-    #[test]
-    fn should_construct_correct_cover_url() {
-        // Given: A client
-        let client = OpenLibraryClient::new().unwrap();
-        let isbn = "9780140328721";
-
-        // When: Constructing the cover URL
-        let url = format!("{}/b/isbn/{}-L.jpg", client.cover_base_url(), isbn);
-
-        // Then: URL should be correctly formatted
-        assert!(url.contains("covers.openlibrary.org"));
-        assert!(url.contains("/b/isbn/9780140328721-L.jpg"));
     }
 
     // Note: Integration tests that make actual API calls would go in

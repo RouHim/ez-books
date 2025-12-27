@@ -69,47 +69,6 @@ pub async fn find_by_id(pool: &DatabasePool, id: &str) -> Result<Book> {
     Ok(book)
 }
 
-#[instrument(skip(pool, book))]
-pub async fn update(pool: &DatabasePool, book: &Book) -> Result<()> {
-    info!(book_id = %book.id, "Updating book in database");
-
-    let result = sqlx::query(
-        r#"
-        UPDATE books SET
-            title = ?, author = ?, isbn_10 = ?, isbn_13 = ?, publisher = ?,
-            publish_date = ?, description = ?, cover_image_path = ?,
-            epub_file_path = ?, openlibrary_key = ?, openlibrary_work_key = ?,
-            page_count = ?, language = ?, updated_at = ?
-        WHERE id = ?
-        "#,
-    )
-    .bind(&book.title)
-    .bind(&book.author)
-    .bind(&book.isbn_10)
-    .bind(&book.isbn_13)
-    .bind(&book.publisher)
-    .bind(&book.publish_date)
-    .bind(&book.description)
-    .bind(&book.cover_image_path)
-    .bind(&book.epub_file_path)
-    .bind(&book.openlibrary_key)
-    .bind(&book.openlibrary_work_key)
-    .bind(book.page_count)
-    .bind(&book.language)
-    .bind(book.updated_at)
-    .bind(&book.id)
-    .execute(pool)
-    .await?;
-
-    if result.rows_affected() == 0 {
-        warn!(book_id = %book.id, "Book not found for update");
-        return Err(EzBooksError::BookNotFound(book.id.clone()));
-    }
-
-    info!(book_id = %book.id, "Book updated successfully");
-    Ok(())
-}
-
 #[instrument(skip(pool))]
 pub async fn delete(pool: &DatabasePool, id: &str) -> Result<()> {
     info!(book_id = %id, "Deleting book from database");
@@ -257,42 +216,6 @@ mod tests {
         // Then: Should return books in descending order (newest first)
         assert_eq!(books[0].id, book2.id);
         assert_eq!(books[1].id, book1.id);
-    }
-
-    #[tokio::test]
-    async fn should_update_book_successfully() {
-        // Given: A book in the database
-        let (pool, _temp_dir) = setup_test_db().await;
-        let mut book = create_test_book();
-        insert(&pool, &book).await.unwrap();
-
-        // When: Updating the book
-        book.title = "Updated Title".to_string();
-        book.author = Some("New Author".to_string());
-        book.update_timestamp();
-        let result = update(&pool, &book).await;
-
-        // Then: Should succeed
-        assert!(result.is_ok());
-
-        // And: Updated values should be persisted
-        let found_book = find_by_id(&pool, &book.id).await.unwrap();
-        assert_eq!(found_book.title, "Updated Title");
-        assert_eq!(found_book.author, Some("New Author".to_string()));
-    }
-
-    #[tokio::test]
-    async fn should_return_error_when_updating_non_existent_book() {
-        // Given: An empty database
-        let (pool, _temp_dir) = setup_test_db().await;
-        let book = create_test_book();
-
-        // When: Updating a non-existent book
-        let result = update(&pool, &book).await;
-
-        // Then: Should return BookNotFound error
-        assert!(result.is_err());
-        assert!(matches!(result.unwrap_err(), EzBooksError::BookNotFound(_)));
     }
 
     #[tokio::test]
