@@ -30,6 +30,7 @@ impl FileStorage {
 
     #[instrument(skip(self, data))]
     pub fn save_epub(&self, book_id: &str, data: &[u8]) -> Result<String> {
+        Self::ensure_safe_book_id(book_id)?;
         let file_path = self.epub_path(book_id);
         info!(book_id = %book_id, path = %file_path.display(), "Saving EPUB file");
 
@@ -44,6 +45,7 @@ impl FileStorage {
 
     #[instrument(skip(self))]
     pub fn read_epub(&self, book_id: &str) -> Result<Vec<u8>> {
+        Self::ensure_safe_book_id(book_id)?;
         let file_path = self.epub_path(book_id);
         info!(book_id = %book_id, path = %file_path.display(), "Reading EPUB file");
 
@@ -58,6 +60,7 @@ impl FileStorage {
 
     #[instrument(skip(self, data))]
     pub fn save_cover(&self, book_id: &str, data: &[u8]) -> Result<String> {
+        Self::ensure_safe_book_id(book_id)?;
         let file_path = self.cover_path(book_id);
         info!(book_id = %book_id, path = %file_path.display(), "Saving cover image");
 
@@ -72,6 +75,7 @@ impl FileStorage {
 
     #[instrument(skip(self))]
     pub fn read_cover(&self, book_id: &str) -> Result<Vec<u8>> {
+        Self::ensure_safe_book_id(book_id)?;
         let file_path = self.cover_path(book_id);
         info!(book_id = %book_id, path = %file_path.display(), "Reading cover image");
 
@@ -86,6 +90,7 @@ impl FileStorage {
 
     #[instrument(skip(self))]
     pub fn delete_epub(&self, book_id: &str) -> Result<()> {
+        Self::ensure_safe_book_id(book_id)?;
         let file_path = self.epub_path(book_id);
         info!(book_id = %book_id, path = %file_path.display(), "Deleting EPUB file");
 
@@ -104,6 +109,7 @@ impl FileStorage {
 
     #[instrument(skip(self))]
     pub fn delete_cover(&self, book_id: &str) -> Result<()> {
+        Self::ensure_safe_book_id(book_id)?;
         let file_path = self.cover_path(book_id);
         info!(book_id = %book_id, path = %file_path.display(), "Deleting cover image");
 
@@ -130,6 +136,20 @@ impl FileStorage {
         self.base_path
             .join("covers")
             .join(format!("{}.jpg", book_id))
+    }
+
+    fn ensure_safe_book_id(book_id: &str) -> Result<()> {
+        if book_id.is_empty()
+            || book_id.contains('/')
+            || book_id.contains('\\')
+            || book_id.contains("..")
+        {
+            return Err(EzBooksError::FileStorage(format!(
+                "Invalid book id: {}",
+                book_id
+            )));
+        }
+        Ok(())
     }
 }
 
@@ -260,6 +280,40 @@ mod tests {
 
         // Then: Should succeed (idempotent)
         assert!(result.is_ok());
+    }
+
+    #[test]
+    fn should_reject_path_traversal_in_book_id() {
+        // Given: A file storage instance
+        let (_storage, _temp) = create_test_storage();
+
+        // When/Then: Book ids containing path separators or traversal sequences are rejected
+        for malicious in ["../evil", "a/b", "a\\b", "..", ""] {
+            assert!(read_epub_result(&_storage, malicious).is_err());
+            assert!(read_cover_result(&_storage, malicious).is_err());
+        }
+    }
+
+    #[test]
+    fn should_still_accept_plain_book_ids() {
+        // Given: A file storage instance and a plain (UUID-like) book id
+        let (storage, _temp) = create_test_storage();
+        let book_id = "550e8400-e29b-41d4-a716-446655440000";
+
+        // When: Saving a cover with the plain id
+        let saved_path = storage.save_cover(book_id, b"jpeg").unwrap();
+
+        // Then: The file is stored inside the storage directory and readable again
+        assert!(saved_path.contains("covers"));
+        assert_eq!(storage.read_cover(book_id).unwrap(), b"jpeg");
+    }
+
+    fn read_epub_result(storage: &FileStorage, id: &str) -> Result<Vec<u8>> {
+        storage.read_epub(id)
+    }
+
+    fn read_cover_result(storage: &FileStorage, id: &str) -> Result<Vec<u8>> {
+        storage.read_cover(id)
     }
 
     #[test]
