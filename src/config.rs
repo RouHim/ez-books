@@ -31,12 +31,6 @@ impl Config {
     }
 }
 
-impl Default for Config {
-    fn default() -> Self {
-        Self::from_env().expect("Failed to load configuration")
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;

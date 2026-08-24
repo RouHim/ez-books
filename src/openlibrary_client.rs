@@ -4,7 +4,6 @@ use reqwest::Client;
 use std::time::Duration;
 use tracing::{info, instrument, warn};
 
-const DEFAULT_BASE_URL: &str = "https://openlibrary.org";
 const REQUEST_TIMEOUT: Duration = Duration::from_secs(30);
 
 #[derive(Clone, Debug)]
@@ -14,10 +13,6 @@ pub struct OpenLibraryClient {
 }
 
 impl OpenLibraryClient {
-    pub fn new() -> Result<Self> {
-        Self::with_base_url(DEFAULT_BASE_URL)
-    }
-
     pub fn with_base_url(base_url: &str) -> Result<Self> {
         let http_client = Client::builder()
             .timeout(REQUEST_TIMEOUT)
@@ -91,20 +86,15 @@ impl OpenLibraryClient {
     }
 }
 
-impl Default for OpenLibraryClient {
-    fn default() -> Self {
-        Self::new().expect("Failed to create default OpenLibraryClient")
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
+    const DEFAULT_BASE_URL: &str = "https://openlibrary.org";
 
     #[test]
     fn should_create_client_with_default_base_url() {
         // Given/When: Creating a default client
-        let result = OpenLibraryClient::new();
+        let result = OpenLibraryClient::with_base_url(DEFAULT_BASE_URL);
 
         // Then: Should succeed
         assert!(result.is_ok());
@@ -129,7 +119,7 @@ mod tests {
     #[test]
     fn should_construct_correct_api_url() {
         // Given: A client
-        let client = OpenLibraryClient::new().unwrap();
+        let client = OpenLibraryClient::with_base_url(DEFAULT_BASE_URL).unwrap();
         let isbn = "9780140328721";
 
         // When: Constructing the API URL
