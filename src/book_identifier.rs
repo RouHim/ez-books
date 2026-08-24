@@ -147,19 +147,6 @@ mod tests {
     use crate::openlibrary_types::*;
     use std::collections::HashMap;
 
-    fn create_test_epub_metadata() -> EpubMetadata {
-        EpubMetadata {
-            title: "Test Book".to_string(),
-            author: Some("Test Author".to_string()),
-            isbn_10: None,
-            isbn_13: Some("9781234567890".to_string()),
-            publisher: None,
-            language: Some("en".to_string()),
-            description: None,
-            subjects: vec!["Fiction".to_string()],
-        }
-    }
-
     fn create_test_openlibrary_response() -> BooksApiResponse {
         let mut books = HashMap::new();
 
