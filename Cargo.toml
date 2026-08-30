@@ -6,7 +6,7 @@ rust-version = "1.65"
 
 [dependencies]
 # Web Server
-warp = "0.3"
+warp = "0.4"
 tokio = { version = "1.48", features = ["full"] }
 bytes = "1.11"
 futures = "0.3"
